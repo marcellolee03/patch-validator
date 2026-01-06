@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from openai import OpenAI
 from os import makedirs
 
-
 def generate_prompt(vulnerability_details: dict, environment_info: str) -> dict:
     vulnerability_info = ''
     for key, value in vulnerability_details.items():
@@ -14,59 +13,31 @@ def generate_prompt(vulnerability_details: dict, environment_info: str) -> dict:
 "CVEs": vulnerability_details["CVEs"],
 
 "prompt": f''' 
-You are a senior security engineer specialized in the creation of BASH shell scripts.
+Role: Act as a Senior System Security Engineer and Linux Hardening Specialist.
 
-Your task is to generate a safe, idempotent, auditable BASH shell script capable of correcting the following vulnerability once executed on the target system.
-
-## VULNERABILITY INFORMATION:
+## VULNERABILITY CONTEXT:
 {vulnerability_info}
 
-## COMPUTATIONAL ENVIRONMENT INFORMATION:
+## COMPUTATIONAL ENVIRONMENT CONTEXT:
 {environment_info}
 
-Your response MUST follow this exact structure, with each section clearly defined:
+Task: Write a minimalist, surgical, and idempotent BASH script to mitigate the vulnerability described above within the provided environment context.
 
-## 1. Environment Analysis
-- **System Compatibility:** Analyze the provided environment information and confirm compatibility with the remediation approach. Identify any environment-specific considerations (e.g., package manager commands, init system, kernel version requirements).
-- **Prerequisites Check:** List any missing dependencies or tools that need to be verified or installed based on the environment.
-- **Potential Conflicts:** Identify any installed software, running services, or system configurations that might conflict with the remediation.
+Code Requirements:
 
----
+-Minimalism: Use only native commands (preferably POSIX-compliant). Avoid installing new packages unless strictly necessary.
 
-## 2. Vulnerability Analysis
-- **Description:** Explain what the vulnerability is in simple terms.
-- **Impact:** Describe the potential risks and impact if the vulnerability is exploited.
-- **Detection:** Detail the specific commands or checks that can be used to confirm the system is currently vulnerable, adapted to the detected environment (e.g., using the correct package manager commands).
-- **Affected Components:** Identify which specific software versions or configurations in the environment are vulnerable.
+-Surgical Logic: The script must:
 
----
+--Validate whether the system is vulnerable before taking action.
 
-## 3. Remediation Plan
-- **Strategy:** Describe the step-by-step plan to fix the vulnerability. Explain why this is the optimal approach for the detected environment.
-- **Environment-Specific Adaptations:** Explain any adjustments made based on the OS version, package manager, init system, or other environment factors.
-- **Pre-flight Checks:** List the checks the script will perform before making any changes (e.g., verifying root privileges, checking if the fix is already applied, validating package manager availability, confirming required services are running).
-- **Safety Measures:** Explain the safety mechanisms that will be included (e.g., backing up configuration files before modifying them, testing configurations before applying, providing rollback capability).
-- **Verification:** Describe how the script will confirm that the fix was successfully applied and that the system remains functional.
+--Apply the exact fix (e.g., change a permission, edit a config line, disable a service).
 
----
+--Clean Code: Use semantic variable names, clear indentation, and brief comments only where the logic is complex.
 
-## 4. Generated BASH Script
-Generate the final BASH script based on the plan above. The script MUST adhere to the following best practices:
+--Security: Implement basic error handling (e.g., set -euo pipefail) and verify that the user has root privileges.
 
-- **Shebang:** Start with `#!/bin/bash`.
-- **Error Handling:** Use `set -euo pipefail` to ensure the script exits immediately if a command fails, and include trap handlers for cleanup on error.
-- **Environment Detection:** Include functions to validate the environment matches expected parameters (OS, package manager, required tools).
-- **Idempotency:** The script must be safe to run multiple times. If it detects the system is already secure, it should report that and exit gracefully with appropriate exit codes.
-- **Auditability & Logging:** 
-  - Include clear `echo` statements for each major action with timestamps
-  - Log all actions to a file (e.g., `/var/log/vulnerability_remediation_YYYYMMDD.log`)
-  - Distinguish between INFO, WARNING, and ERROR messages
-- **Privilege Management:** Check for and require appropriate privileges (typically root) with clear error messages if not met.
-- **Backup & Rollback:** Create timestamped backups of any files modified, and provide instructions for rollback if needed.
-- **Comments:** Add detailed comments within the code explaining the purpose of each function or command block.
-- **Exit Codes:** Use meaningful exit codes (0 = success, 1 = already patched, 2 = error, etc.) and document them.
-
-The script should be production-ready, defensive, and assume it may run in an automated environment.
+--Output: The script must be silent on success, reporting errors only via stderr.
 
 Your response should only contain the generated shell script. Nothing else.
 '''}
@@ -90,9 +61,9 @@ def ask_LLM(model: str, prompt: str) -> ApiResponseStatus:
             API_URL = "https://openrouter.ai/api/v1"
             MODEL = "deepseek/deepseek-chat-v3.1"
             API_KEY = getenv('DEEPSEEK_API_KEY')
-        case 'gemini-2.5-pro':
+        case 'gemini-3-flash':
             API_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
-            MODEL = "gemini-2.5-pro"
+            MODEL = "gemini-3-flash-preview"
             API_KEY = getenv('GEMINI_API_KEY')
         case 'gemini-2.5-flash':
             API_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"

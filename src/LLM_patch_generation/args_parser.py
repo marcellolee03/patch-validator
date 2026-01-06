@@ -1,6 +1,6 @@
 import argparse
 
-MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'deepseek-V3.1', 'deepseek-R1']
+MODELS = ['gemini-3-flash', 'gemini-2.5-flash', 'deepseek-V3.1', 'deepseek-R1']
 
 def parse_arguments_generator():
     parser = argparse.ArgumentParser(description = 'Patch correction generation comparison between different LLM models.')

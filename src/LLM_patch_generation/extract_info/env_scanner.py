@@ -21,7 +21,6 @@ def get_os_info() -> dict:
         'node': platform.node(),
         'release': platform.release(),
         'version': platform.version(),
-        'processor': platform.processor()
     }
 
 

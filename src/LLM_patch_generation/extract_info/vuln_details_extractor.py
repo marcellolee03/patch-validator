@@ -8,7 +8,7 @@ def get_found_vulnearbilities(scan_report_filepath: str):
     return vulnerabilities
 
 def extract_vulnerability_details(scan_report_filepath: str, line: int):
-    headers = ['CVEs','NVT Name','Port','Port Protocol','Summary', 'Specific Result', 'Vulnerability Detection Method','Affected Software/OS','Solution']
+    headers = ['CVEs','NVT Name','Port','Port Protocol','Summary', 'Specific Result', 'Vulnerability Detection Method','Affected Software/OS']
 
     scan_report = pd.read_csv(scan_report_filepath)
 
