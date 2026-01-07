@@ -3,6 +3,7 @@ from LLM_patch_generation.generator_utils import ask_LLM
 from LLM_patch_generation.extract_info.env_scanner import extract_environment_info
 from LLM_patch_generation.extract_info.container_scanner import extract_container_info, list_containers
 from LLM_patch_generation.validator_utils import search_for, generate_validator_prompt
+from LLM_patch_generation.extract_info.vuln_details_extractor import extract_vulnerability_details
 from os import mkdir
 import time
 
@@ -14,12 +15,12 @@ def main():
     # Setting directory containing correction patches
     args = parse_arguments_validator()
     patches_filepath = args.Patches_directory_filepath
-
+    report_filepath = args.report_filepath
 
     # Specifying targeted vulnerability 
     print('Identifying vulnerability...')
     try:
-        with open(f'{patches_filepath}/deepseek-R1_details.txt', 'r') as f:
+        with open(f'{patches_filepath}/gemini-2.5-flash_details.txt', 'r') as f:
             for line in f:
                 if line.startswith('Vulnerability:'):
                     TARGET_VULNEARBILITY = line.split(':', 1)[1].strip()
@@ -28,6 +29,13 @@ def main():
         print("Could not find directory containing correction patches. Ending program.")
         return
 
+    # Fetching OpenVAS report
+    print('Fetching OpenVAS report...')
+    try:
+        VULN_DETAILS = extract_vulnerability_details(report_filepath, 0)
+    except FileNotFoundError:
+        print(f'Could not find OpenVAS report in {report_filepath}. Ending program.')
+        return
 
     # Setting ENVIRONMENT INFORMATION for environment where vulnerability is located
     valid_user_input = False
@@ -101,12 +109,12 @@ def main():
     
     # Storing all generated correction patches in a single variable
     print('Gathering generated correction patches...')
-    MODELS = ['gemini-2.5-pro', 'gemini-2.5-flash', 'deepseek-R1', 'deepseek-V3.1']
+    MODELS = ['gemini-2.5-flash', 'gemini-3-flash', 'deepseek-V3.1']
     patches = {}
 
     for model in MODELS:
         try:
-            with open(f'{patches_filepath}/{model}_patch.clean.sh', 'r') as f:
+            with open(f'{patches_filepath}/{model}_patch.sh', 'r') as f:
                 content = f.read()
                 patches[model] = content
         except FileNotFoundError:
@@ -121,7 +129,7 @@ def main():
         GENERATED_CORRECTION_PATCHES +=  f'===============================================================================\n'
     
     # Fully assembling prompt to feed the validator
-    validator_prompt = generate_validator_prompt(ENVIRONMENT_INFORMATION, VULNERABILITY_CHEATS, GENERATED_CORRECTION_PATCHES)
+    validator_prompt = generate_validator_prompt(ENVIRONMENT_INFORMATION, VULN_DETAILS, VULNERABILITY_CHEATS, GENERATED_CORRECTION_PATCHES)
 
     timer_start = time.perf_counter()
 

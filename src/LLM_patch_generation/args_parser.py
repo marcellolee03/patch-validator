@@ -15,5 +15,6 @@ def parse_arguments_validator():
     parser = argparse.ArgumentParser(description = 'Validator tasked to choose the best correction patch amongst available.')
 
     parser.add_argument('Patches_directory_filepath', help='Directory filepath containing correction patches.') 
-
+    parser.add_argument('report_filepath', help='Filepath containing OpenVAS report.') 
+    
     return parser.parse_args()

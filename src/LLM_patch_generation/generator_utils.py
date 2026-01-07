@@ -29,8 +29,6 @@ Code Requirements:
 
 -Surgical Logic: The script must:
 
---Validate whether the system is vulnerable before taking action.
-
 --Apply the exact fix (e.g., change a permission, edit a config line, disable a service).
 
 --Clean Code: Use semantic variable names, clear indentation, and brief comments only where the logic is complex.

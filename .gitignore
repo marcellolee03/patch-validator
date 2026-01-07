@@ -12,9 +12,10 @@ wheels/
 
 # Test
 report.csv
-patches
-scan_reports
+patches/
+scan_reports/
 scan_reports-14-11
-validator_output
+validator_output/
 env_info.txt
 cheatsheet.txt
+

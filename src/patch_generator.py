@@ -4,6 +4,7 @@ from LLM_patch_generation.extract_info.container_scanner import extract_containe
 from LLM_patch_generation.extract_info.env_scanner import extract_environment_info
 from LLM_patch_generation.extract_info.vuln_details_extractor import extract_vulnerability_details, get_found_vulnearbilities
 from AutoVAS.fully_initiate_scan import fully_initiate_scan
+from LLM_patch_generation.validator_utils import search_for
 import time
 
 def main():
@@ -65,7 +66,16 @@ def main():
             else:
                 print('Invalid input. Select container from list')
     else:
-        env_info = extract_environment_info()
+        environment_pattern = r"^\s*\"" + "pop-os-24-ambient" + r"\":\s*\{(.*?)\}"
+        match = search_for(environment_pattern, 'env_info.txt')
+        
+        if match:
+            env_info = match
+        else:
+            print("Target vulnerability not found in env_info.txt. Ending program.")
+            return
+
+#        env_info = extract_environment_info()
 
     print('Extracting vulnerability details...')
     vuln_details = extract_vulnerability_details(scan_report_filepath, vulnerability_loc)
