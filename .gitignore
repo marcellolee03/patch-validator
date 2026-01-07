@@ -13,6 +13,7 @@ wheels/
 # Test
 report.csv
 patches/
+reports/
 scan_reports/
 scan_reports-14-11
 validator_output/
