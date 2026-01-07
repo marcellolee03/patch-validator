@@ -19,11 +19,11 @@ def search_for(pattern_string, target_file):
     
 def generate_validator_prompt(env_info, vuln_details, vuln_cheats, generated_patches):
     return f"""
-# Role:
-You are a **Senior Security Engineer** and **Linux Kernel Maintainer** with decades of experience in code analysis, incident response, and patch management.
+Role:
+You are a Senior Security Engineer and Linux Kernel Maintainer with decades of experience in code analysis, incident response, and patch management.
 Your primary responsibility is to ensure the stability, performance, and security of production systems. 
 
-# Task:
+Task:
 You have received four (4) patches that all claim to fix the **same** security vulnerability. 
 Your mission is to conduct an in-depth comparative analysis and **determine which patch is the best solution** to apply in production, justifying your choice in a technical and didactic manner.
 If NONE of the proposed correction patches successfully mitigate the specified vulnerability, you should declare NONE as the verdict.
@@ -44,7 +44,7 @@ If NONE of the proposed correction patches successfully mitigate the specified v
 {generated_patches}
 ---
 
-# Analysis Instructions and Output Format
+# Analysis Instructions and Output Format:
 
 Think step-by-step. For each of the four patches, rigorously evaluate them based on the following criteria:
 
