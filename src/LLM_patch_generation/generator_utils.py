@@ -117,9 +117,9 @@ def ask_LLM(model: str, prompt: str) -> ApiResponseStatus:
         )
     
 
-def save_results(CVEs: str, LLM_model: str, generated_patch: str, elapsed_time: float):
+def save_results(OID: str, CVEs: str, LLM_model: str, generated_patch: str, elapsed_time: float):
 
-    base_path = f'patches/{CVEs}'
+    base_path = f'patches/{OID}'
 
     try:
         makedirs(base_path)
@@ -138,6 +138,7 @@ def save_results(CVEs: str, LLM_model: str, generated_patch: str, elapsed_time: 
     with open(details_file, 'w') as f:
         f.write('=== PATCH GENERATION DETAILS ===\n')
         f.write(f'Model: {LLM_model}\n')
+        f.write(f'NVT OID: {OID}\n')
         f.write(f'Vulnerability: {CVEs}\n')
         f.write(f'Time elapsed: {elapsed_time:.4f} seconds\n')
         f.write(f'Patch functional?: ')

@@ -6,11 +6,11 @@ from LLM_patch_generation.extract_info.vuln_details_extractor import extract_vul
 from AutoVAS.fully_initiate_scan import fully_initiate_scan
 from LLM_patch_generation.validator_utils import search_for
 import time
+import json
 
 def main():
     #scan_report = fully_initiate_scan()
     args = parse_arguments_generator()
-
     LLM_model = args.LLM_model
     scan_report_filepath = args.report_filepath
 
@@ -28,11 +28,18 @@ def main():
         try:
             user_input = int(user_input)
             if user_input in found_vulnerabilities:
+                nvt_oid = found_vulnerabilities[user_input]
                 valid_user_input = True
-                vulnerability_loc = user_input
         except ValueError:
             pass
     
+    # Identifying vulnerability
+    print('Extracting vulnerability details...')
+    vuln_details = extract_vulnerability_details(scan_report_filepath, nvt_oid)
+    if vuln_details == None:
+        print(f'Could not find vulnerability with oid {nvt_oid} in {scan_report_filepath}. Ending program.')
+        return
+
     # Prompting user to say if vulnerability is found in DOCKER CONTAINER 
     valid_user_input = False
     while not valid_user_input:
@@ -49,7 +56,11 @@ def main():
                 pass
 
     print('Extracting environment information...')
+    with open('env.txt', 'r', encoding='utf-8') as file:
+        test_environments = json.load(file)
+
     if vuln_in_container:
+        '''
         active_containers = list_containers()
         
         print('Select container from list: ')
@@ -65,20 +76,21 @@ def main():
                 valid_user_input = True
             else:
                 print('Invalid input. Select container from list')
-    else:
-        environment_pattern = r"^\s*\"" + "pop-os-24-ambient" + r"\":\s*\{(.*?)\}"
-        match = search_for(environment_pattern, 'env_info.txt')
-        
-        if match:
-            env_info = match
-        else:
-            print("Target vulnerability not found in env_info.txt. Ending program.")
+        '''
+        try:
+            env_info = test_environments[nvt_oid]['env_info']
+        except KeyError:
+            print(f'Could not find {nvt_oid} NVT OID in env.txt. Ending program.')
             return
-
-#        env_info = extract_environment_info()
-
-    print('Extracting vulnerability details...')
-    vuln_details = extract_vulnerability_details(scan_report_filepath, vulnerability_loc)
+    else:
+        try:
+            env_info = test_environments['pop-os-24-ambient']['env_info']
+        except KeyError:
+            print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
+            return
+        '''
+        env_info = extract_environment_info()
+        '''
 
     print('Generating prompt...')
     prompt = generate_prompt(vuln_details, env_info)
@@ -100,7 +112,7 @@ def main():
     
     # Saving results 
     print("Saving results...")
-    save_results(prompt["CVEs"], LLM_model, LLM_response.content, elapsed_time)
+    save_results(nvt_oid, prompt["CVEs"], LLM_model, LLM_response.content, elapsed_time)
     
 if __name__ == "__main__":
     main()

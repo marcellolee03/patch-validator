@@ -22,8 +22,8 @@ def main():
     try:
         with open(f'{patches_filepath}/gemini-2.5-flash_details.txt', 'r') as f:
             for line in f:
-                if line.startswith('Vulnerability:'):
-                    TARGET_VULNEARBILITY = line.split(':', 1)[1].strip()
+                if line.startswith('NVT OID:'):
+                    nvt_oid = line.split(':', 1)[1].strip()
                     break
     except FileNotFoundError:
         print("Could not find directory containing correction patches. Ending program.")
@@ -32,7 +32,7 @@ def main():
     # Fetching OpenVAS report
     print('Fetching OpenVAS report...')
     try:
-        VULN_DETAILS = extract_vulnerability_details(report_filepath, 0)
+        VULN_DETAILS = extract_vulnerability_details(report_filepath, nvt_oid)
     except FileNotFoundError:
         print(f'Could not find OpenVAS report in {report_filepath}. Ending program.')
         return
@@ -53,44 +53,40 @@ def main():
 
 
     print('Extracting environment information...')
+    with open('env.txt', 'r', encoding='utf-8') as file:
+        test_environments = json.load(file)
+    
     if vuln_in_container:
         # Deactivated for testing:
-
-        #if vuln_in_container:
-            #active_containers = list_containers()
-            
-            #print('Select container from list: ')
-            #for container in active_containers:
-                #print(f'- {container}')
-            
-            #valid_user_input = False
-            #while not valid_user_input:
-                #user_input = input()
-
-                #if user_input in active_containers:
-                    #env_info = extract_container_info(user_input)
-                    #valid_user_input = True
-                #else:
-                    #print('Invalid input. Select container from list')
-        #else:
-            #ENVIRONMENT_INFORMATION = extract_environment_info()
-
-        environment_pattern = r"^\s*\"" + TARGET_VULNEARBILITY + r"\":\s*\{(.*?)\}"
-        match = search_for(environment_pattern, 'env_info.txt')
         
-        if match:
-            ENVIRONMENT_INFORMATION = match
-        else:
-            print("Target vulnerability not found in env_info.txt. Ending program.")
+        '''
+        if vuln_in_container:
+            active_containers = list_containers()
+            
+            print('Select container from list: ')
+            for container in active_containers:
+                print(f'- {container}')
+            
+            valid_user_input = False
+            while not valid_user_input:
+                user_input = input()
+
+                if user_input in active_containers:
+                    env_info = extract_container_info(user_input)
+                    valid_user_input = True
+                else:
+                    print('Invalid input. Select container from list')
+        '''
+        try:
+            env_info = test_environments[nvt_oid]['env_info']
+        except KeyError:
+            print(f'Could not find {nvt_oid} NVT OID in env.txt. Ending program.')
             return
     else:
-        environment_pattern = r"^\s*\"" + "pop-os-24-ambient" + r"\":\s*\{(.*?)\}"
-        match = search_for(environment_pattern, 'env_info.txt')
-        
-        if match:
-            ENVIRONMENT_INFORMATION = match
-        else:
-            print("Target vulnerability not found in env_info.txt. Ending program.")
+        try:
+            env_info = test_environments['pop-os-24-ambient']['env_info']
+        except KeyError:
+            print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
             return
 
 
