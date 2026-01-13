@@ -63,7 +63,7 @@ def main():
         return
 
     print('Extracting environment information...')
-    with open('env.txt', 'r', encoding='utf-8') as file:
+    with open('env_info.txt', 'r', encoding='utf-8-sig') as file:
         test_environments = json.load(file)
     
     if vuln_in_container:
@@ -99,7 +99,7 @@ def main():
             print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
             return
 
-
+    print(ENVIRONMENT_INFORMATION)
     
     # Storing all generated correction patches in a single variable
     print('Gathering generated correction patches...')
