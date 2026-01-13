@@ -78,13 +78,13 @@ def main():
                     print('Invalid input. Select container from list')
         '''
         try:
-            env_info = test_environments[nvt_oid]['env_info']
+            ENVIRONMENT_INFORMATION = test_environments[nvt_oid]['env_info']
         except KeyError:
             print(f'Could not find {nvt_oid} NVT OID in env.txt. Ending program.')
             return
     else:
         try:
-            env_info = test_environments['pop-os-24-ambient']['env_info']
+            ENVIRONMENT_INFORMATION = test_environments['pop-os-24-ambient']['env_info']
         except KeyError:
             print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
             return
@@ -92,16 +92,13 @@ def main():
 
     # Gathering cheatsheet content, including solution
     print('Locating vulnerability in cheatsheet...')
-
-    vuln_cheats_pattern = r"^\s*\"" + TARGET_VULNEARBILITY + r"\":\s*\{(.*?)\}"
-    match = search_for(vuln_cheats_pattern, 'cheatsheet.txt')
-
-    if match:
-        VULNERABILITY_CHEATS = match
-    else:
-        print("Vulnerability not found in cheatsheet. Ending program.")
+    with open('cheatsheet.txt', 'r', encoding='utf-8') as file:
+        cheatsheet = json.load(file)
+    try:
+        VULNERABILITY_CHEATS = cheatsheet[nvt_oid]['recomended_correction_script']
+    except KeyError:
+        printf(f'Could not find {nvt_oid} in cheatsheet. Ending program')
         return
-    
     
     # Storing all generated correction patches in a single variable
     print('Gathering generated correction patches...')
