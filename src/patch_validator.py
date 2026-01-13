@@ -6,6 +6,7 @@ from LLM_patch_generation.validator_utils import search_for, generate_validator_
 from LLM_patch_generation.extract_info.vuln_details_extractor import extract_vulnerability_details
 from os import mkdir
 import time
+import json
 
 # LLM model tasked to validate generated correction patches
 VALIDATOR_MODEL = "gpt-5.1"
@@ -20,7 +21,7 @@ def main():
     # Specifying targeted vulnerability 
     print('Identifying vulnerability...')
     try:
-        with open(f'{patches_filepath}/gemini-2.5-flash_details.txt', 'r') as f:
+        with open(f'{patches_filepath}/gemini-3-flash_details.txt', 'r') as f:
             for line in f:
                 if line.startswith('NVT OID:'):
                     nvt_oid = line.split(':', 1)[1].strip()
@@ -51,6 +52,15 @@ def main():
             case _:
                 pass
 
+    # Gathering cheatsheet content, including solution
+    print('Locating vulnerability in cheatsheet...')
+    with open('cheatsheet.txt', 'r', encoding='utf-8') as file:
+        cheatsheet = json.load(file)
+    try:
+        VULNERABILITY_CHEATS = cheatsheet[nvt_oid]['recommended_correction_script']
+    except KeyError:
+        print(f'Could not find {nvt_oid} in cheatsheet. Ending program')
+        return
 
     print('Extracting environment information...')
     with open('env.txt', 'r', encoding='utf-8') as file:
@@ -90,15 +100,6 @@ def main():
             return
 
 
-    # Gathering cheatsheet content, including solution
-    print('Locating vulnerability in cheatsheet...')
-    with open('cheatsheet.txt', 'r', encoding='utf-8') as file:
-        cheatsheet = json.load(file)
-    try:
-        VULNERABILITY_CHEATS = cheatsheet[nvt_oid]['recomended_correction_script']
-    except KeyError:
-        printf(f'Could not find {nvt_oid} in cheatsheet. Ending program')
-        return
     
     # Storing all generated correction patches in a single variable
     print('Gathering generated correction patches...')
@@ -123,7 +124,7 @@ def main():
     
     # Fully assembling prompt to feed the validator
     validator_prompt = generate_validator_prompt(ENVIRONMENT_INFORMATION, VULN_DETAILS, VULNERABILITY_CHEATS, GENERATED_CORRECTION_PATCHES)
-
+    
     timer_start = time.perf_counter()
 
     # Sending prompt to validator API
