@@ -20,66 +20,46 @@ def search_for(pattern_string, target_file):
 def generate_validator_prompt(env_info, vuln_details, vuln_cheats, generated_patches):
     return f"""
 # Role:
-You are a **Senior Security Engineer** and **Linux Kernel Maintainer** with decades of experience in code analysis, incident response, and patch management.
-Your primary responsibility is to ensure the stability, performance, and security of production systems. 
+You are a **Senior Security Engineer** and **Linux Kernel Maintainer**. Your expertise lies in deep code analysis, identifying side effects, and ensuring that security patches adhere to the highest standards of performance and stability.
 
 # Task:
-You have received four (4) patches that all claim to fix the **same** security vulnerability. 
-Your mission is to conduct an in-depth comparative analysis and **determine which patch is the best solution** to apply in production, justifying your choice in a technical and didactic manner.
-If NONE of the proposed correction patches successfully mitigate the specified vulnerability, you should declare NONE as the verdict.
----
+Analyze four (4) proposed patches designed to fix a specific security vulnerability. 
+Your goal is to evaluate each patch against the provided context and the "Ideal Solution," assign a score, and determine the winner(s).
 
-# AVAILABLE INFORMATION:
+# Evaluation Methodology:
+For each patch, you must perform a "Step-by-Step Analysis" BEFORE assigning the final score:
+1. **Vulnerability Fix:** Does it effectively neutralize the root cause described in the OpenVAS report?
+2. **Computational Compatibility**: Is the patch compatible with the specified Computational Environment (e.g, uses missing dependencies)?
+3. **Side Effects:** Does the patch introduce potential performance regressions or new security risks?
+4. **Alignment:** How closely does the logic follow the "Ideal Solution"?
+
+# Scoring Rubric:
+* **Score 1 (Failed):** The patch does NOT fix the vulnerability, is syntactically incorrect, is incompatible with the specified Computational Environment, or would fail to compile/run in the specified environment.
+* **Score 2 (Sub-optimal Fix):** The patch successfully fixes the vulnerability but uses a "workaround" logic, introduces technical debt, or deviates significantly from the best practices outlined in the Ideal Solution.
+* **Score 3 (Optimal Fix):** The patch effectively fixes the vulnerability, follows the logic of the Ideal Solution, and maintains code quality/performance standards.
+
+---
+# INPUT DATA:
 ## VULNERABILITY CONTEXT:
 {vuln_details}
 
-## COMPUTATIONAL ENVIRONMENT CONTEXT:
+## COMPUTATIONAL ENVIRONMENT:
 {env_info}
 
-## IDEAL SOLUTION:
+## IDEAL SOLUTION (Reference):
 {vuln_cheats}
 
----
-# PROPOSED CORRECTION PATCHES:
+## PROPOSED PATCHES TO EVALUATE:
 {generated_patches}
----
-
-# Analysis Instructions and Output Format
-
-Think step-by-step. For each of the four patches, rigorously evaluate them based on the following criteria:
-
-## Evaluation Criteria (Your Thought Process)
-
-1.  **Fix Efficacy:**
-    * Does the patch *completely* fix the described root cause?
-    * Does it align with the provided "Ideal Fix"?
-2.  **Regression Risk (Security):**
-    * Does the patch inadvertently introduce **new vulnerabilities**? (Ex: integer overflows, off-by-one errors, new race conditions, incorrect validations)?
-3.  **Regression Risk (Stability):**
-    * Could the patch cause *kernel panics*, *deadlocks*, or break existing functionality in the critical services (Nginx, PostgreSQL)?
-4.  **Performance Impact:**
-    * Does the fix introduce significant *overhead*? (Ex: Adds unnecessary locks, excessive loops, or redundant checks in a *hot path* of the code?)
-5.  **Maintainability and Code Quality:**
-    * Is the code clean, does it follow the Linux *coding style*, and is it well-commented?
-
-### Expected Output Format
-
-Provide your answer in the following format:
-
-**Verdict:** `[Patch X]`
-
-**Summary Justification:**
-`[A brief (2-3 line) explanation of why Patch X was chosen and why the others were rejected, taking the Security Policy into account.]`
 
 ---
+# Expected Output Format:
 
-**Patch Analysis:**
+### Patch Analysis: [Patch ID/Author]
+**Analysis:** [Briefly explain if it fixes the issue and if there are side effects]
+**Alignment Check:** [Compare logic with the Ideal Solution]
+**Score:** [1, 2, or 3]
 
-**Patch by [AUTHOR NAME]:**
-* **Efficacy:**: (1 - (YES/NO)), (2 - (YES/NO))
-* **Risk (Security/Stability):** (YES/NO)
-* **Performance:** (YES/NO)
-* **Maintainability:** (YES/NO)
-
-** (Repeat structure) **
+---
+**Final Winner(s):** [Patch X, Patch Y] (or "NONE" if all scored 1)
 """
