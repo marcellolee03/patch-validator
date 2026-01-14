@@ -56,7 +56,7 @@ def main():
                 pass
 
     print('Extracting environment information...')
-    with open('env.txt', 'r', encoding='utf-8') as file:
+    with open('env_info.txt', 'r', encoding='utf-8-sig') as file:
         test_environments = json.load(file)
 
     if vuln_in_container:

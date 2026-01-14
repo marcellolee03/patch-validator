@@ -99,7 +99,6 @@ def main():
             print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
             return
 
-    print(ENVIRONMENT_INFORMATION)
     
     # Storing all generated correction patches in a single variable
     print('Gathering generated correction patches...')
@@ -146,7 +145,7 @@ def main():
     except FileExistsError:
         pass
 
-    filename = f"{TARGET_VULNEARBILITY}_verdict.txt"
+    filename = f"{nvt_oid}_verdict.txt"
 
     with open(f"{VALIDATOR_OUTPUT_DIR}/{filename}", "w") as f:
         f.write(response.content)

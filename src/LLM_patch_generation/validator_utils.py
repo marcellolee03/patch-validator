@@ -55,7 +55,7 @@ For each patch, you must perform a "Step-by-Step Analysis" BEFORE assigning the 
 ---
 # Expected Output Format:
 
-### Patch Analysis: [Patch ID/Author]
+### Patch Analysis: [Patch Author]
 **Analysis:** [Briefly explain if it fixes the issue and if there are side effects]
 **Alignment Check:** [Compare logic with the Ideal Solution]
 **Score:** [1, 2, or 3]
