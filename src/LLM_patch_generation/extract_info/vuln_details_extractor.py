@@ -14,7 +14,8 @@ def extract_vulnerability_details(report_filepath: str, oid: str):
     line = report[report['NVT OID'].astype(str) == oid]
     
     if line.empty:
-        return None 
+        print(f"ERRO: OID '{oid}' não foi encontrado no CSV. Nenhum OID corresponde exatamente.")
+        raise ValueError(f"OID '{oid}' não encontrado no relatório.") 
 
     line = line.index[0]
 
