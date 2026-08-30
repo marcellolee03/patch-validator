@@ -22,6 +22,7 @@ def extract_vulnerability_details(report_filepath: str, oid: str):
     vuln_details = {}
     for header in headers:
         content = report.loc[line, header]
-        vuln_details[header] = content
+        # Replace NaN/null values with None (Python standard null) to avoid sending "nan" literal to the LLM
+        vuln_details[header] = content if pd.notna(content) else None
     
     return vuln_details
