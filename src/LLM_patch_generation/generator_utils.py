@@ -117,7 +117,7 @@ def ask_LLM(model: str, prompt: str) -> ApiResponseStatus:
         )
     
 
-def save_results(OID: str, CVEs: str, LLM_model: str, generated_patch: str, elapsed_time: float):
+def save_results(OID: str, CVEs: str, LLM_model: str, generated_patch: str, env_info: str, elapsed_time: float):
 
     base_path = f'patches/{OID}'
 
@@ -141,4 +141,4 @@ def save_results(OID: str, CVEs: str, LLM_model: str, generated_patch: str, elap
         f.write(f'NVT OID: {OID}\n')
         f.write(f'Vulnerability: {CVEs}\n')
         f.write(f'Time elapsed: {elapsed_time:.4f} seconds\n')
-        f.write(f'Patch functional?: ')
+        f.write(f'Env info: {env_info}')

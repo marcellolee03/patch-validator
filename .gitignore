@@ -13,6 +13,9 @@ wheels/
 # Test
 report.csv
 patches/
+patches-batch-1/
+patches-batch-2/
+patches-batch-2.zip
 reports/
 scan_reports/
 scan_reports-14-11

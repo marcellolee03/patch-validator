@@ -4,7 +4,8 @@ from LLM_patch_generation.extract_info.env_scanner import extract_environment_in
 from LLM_patch_generation.extract_info.container_scanner import extract_container_info, list_containers
 from LLM_patch_generation.validator_utils import search_for, generate_validator_prompt
 from LLM_patch_generation.extract_info.vuln_details_extractor import extract_vulnerability_details
-from os import mkdir
+import os
+import re
 import time
 import json
 
@@ -16,10 +17,17 @@ def main():
     # Setting directory containing correction patches
     args = parse_arguments_validator()
     patches_filepath = args.Patches_directory_filepath
-    report_filepath = args.report_filepath
+
+    # Automatically identify the OpenVAS CSV report in the patch directory
+    csv_files = [f for f in os.listdir(patches_filepath) if f.endswith('.csv') and not f.startswith('.')]
+    if not csv_files:
+        print(f"Error: No CSV report file found in directory {patches_filepath}. Ending program.")
+        return
+    report_filepath = os.path.join(patches_filepath, csv_files[0])
 
     # Specifying targeted vulnerability 
     print('Identifying vulnerability...')
+    nvt_oid = None
     try:
         with open(f'{patches_filepath}/gemini-3-flash_details.txt', 'r') as f:
             for line in f:
@@ -30,74 +38,39 @@ def main():
         print("Could not find directory containing correction patches. Ending program.")
         return
 
+    if not nvt_oid:
+        print("Error: Could not find NVT OID in gemini-3-flash_details.txt. Ending program.")
+        return
+
     # Fetching OpenVAS report
     print('Fetching OpenVAS report...')
     try:
         VULN_DETAILS = extract_vulnerability_details(report_filepath, nvt_oid)
-    except FileNotFoundError:
-        print(f'Could not find OpenVAS report in {report_filepath}. Ending program.')
+    except (FileNotFoundError, ValueError) as e:
+        print(f'Error fetching OpenVAS report details: {str(e)}. Ending program.')
         return
 
-    # Setting ENVIRONMENT INFORMATION for environment where vulnerability is located
-    valid_user_input = False
-    while not valid_user_input:
-        user_input = input('Is vulnerability found in a Docker Container [Y/n]? ')
-        match user_input.lower():
-            case 'y':
-                vuln_in_container = True
-                valid_user_input = True
-            case 'n':
-                vuln_in_container = False
-                valid_user_input = True
-            case _:
-                pass
-
-    # Gathering cheatsheet content, including solution
-    print('Locating vulnerability in cheatsheet...')
-    with open('cheatsheet.txt', 'r', encoding='utf-8') as file:
-        cheatsheet = json.load(file)
-    try:
-        VULNERABILITY_CHEATS = cheatsheet[nvt_oid]['recommended_correction_script']
-    except KeyError:
-        print(f'Could not find {nvt_oid} in cheatsheet. Ending program')
-        return
-
+    # Extract environment information from deepseek detail file
     print('Extracting environment information...')
-    with open('env_info.txt', 'r', encoding='utf-8-sig') as file:
-        test_environments = json.load(file)
-    
-    if vuln_in_container:
-        # Deactivated for testing:
-        
-        '''
-        if vuln_in_container:
-            active_containers = list_containers()
-            
-            print('Select container from list: ')
-            for container in active_containers:
-                print(f'- {container}')
-            
-            valid_user_input = False
-            while not valid_user_input:
-                user_input = input()
+    deepseek_filename = 'deepseek-V3.1_details.txt'
+    deepseek_filepath = os.path.join(patches_filepath, deepseek_filename)
+    if not os.path.exists(deepseek_filepath):
+        deepseek_filename = 'deepseek_v3_details.txt'
+        deepseek_filepath = os.path.join(patches_filepath, deepseek_filename)
 
-                if user_input in active_containers:
-                    env_info = extract_container_info(user_input)
-                    valid_user_input = True
-                else:
-                    print('Invalid input. Select container from list')
-        '''
-        try:
-            ENVIRONMENT_INFORMATION = test_environments[nvt_oid]['env_info']
-        except KeyError:
-            print(f'Could not find {nvt_oid} NVT OID in env.txt. Ending program.')
-            return
+    try:
+        with open(deepseek_filepath, 'r', encoding='utf-8') as f:
+            details_content = f.read()
+    except FileNotFoundError:
+        print(f"Could not find {deepseek_filename} in {patches_filepath}. Ending program.")
+        return
+
+    env_match = re.search(r'Env info:\s*(.*)', details_content, re.DOTALL)
+    if env_match:
+        ENVIRONMENT_INFORMATION = env_match.group(1).strip()
     else:
-        try:
-            ENVIRONMENT_INFORMATION = test_environments['pop-os-24-ambient']['env_info']
-        except KeyError:
-            print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
-            return
+        print(f"Could not find 'Env info:' in {deepseek_filename}. Ending program.")
+        return
 
     
     # Storing all generated correction patches in a single variable
@@ -113,6 +86,10 @@ def main():
         except FileNotFoundError:
             print(f"Could not find correction patch generated by {model}. Ending program.")
             return
+
+        if not content.strip():
+            print(f"Error: Correction patch generated by {model} is empty. Ending program.")
+            return
     
     GENERATED_CORRECTION_PATCHES = ''
     GENERATED_CORRECTION_PATCHES +=  f'===============================================================================\n'
@@ -122,7 +99,7 @@ def main():
         GENERATED_CORRECTION_PATCHES +=  f'===============================================================================\n'
     
     # Fully assembling prompt to feed the validator
-    validator_prompt = generate_validator_prompt(ENVIRONMENT_INFORMATION, VULN_DETAILS, VULNERABILITY_CHEATS, GENERATED_CORRECTION_PATCHES)
+    validator_prompt = generate_validator_prompt(ENVIRONMENT_INFORMATION, VULN_DETAILS, GENERATED_CORRECTION_PATCHES)
     
     timer_start = time.perf_counter()
 
@@ -138,19 +115,25 @@ def main():
     timer_end = time.perf_counter()
     elapsed_time = (timer_end - timer_start)
     
-    # Saving validator verdict
+    # Saving validator verdict and prompt
     print("Saving validator output...")
+    output_dir = os.path.join(VALIDATOR_OUTPUT_DIR, nvt_oid)
     try:
-        mkdir(VALIDATOR_OUTPUT_DIR)
-    except FileExistsError:
-        pass
+        os.makedirs(output_dir, exist_ok=True)
+    except Exception as e:
+        print(f"Could not create directory {output_dir}: {str(e)}")
+        return
 
-    filename = f"{nvt_oid}_verdict.txt"
-
-    with open(f"{VALIDATOR_OUTPUT_DIR}/{filename}", "w") as f:
+    # Save verdict
+    with open(os.path.join(output_dir, "verdict.txt"), "w", encoding='utf-8') as f:
         f.write(response.content)
         f.write(f"\n\nELAPSED TIME: {elapsed_time}")
-        print(f"Verdict successfully saved at {VALIDATOR_OUTPUT_DIR}/{filename}!")
+        print(f"Verdict successfully saved at {output_dir}/verdict.txt!")
+
+    # Save prompt
+    with open(os.path.join(output_dir, "prompt.txt"), "w", encoding='utf-8') as f:
+        f.write(validator_prompt)
+        print(f"Prompt successfully saved at {output_dir}/prompt.txt!")
 
     
 if __name__ == '__main__':

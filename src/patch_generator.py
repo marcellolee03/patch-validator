@@ -41,6 +41,7 @@ def main():
         return
 
     # Prompting user to say if vulnerability is found in DOCKER CONTAINER 
+    '''
     valid_user_input = False
     while not valid_user_input:
         user_input = input('Is vulnerability found in a Docker Container [Y/n]? ')
@@ -55,42 +56,26 @@ def main():
             case _:
                 pass
 
+    '''
+    
     print('Extracting environment information...')
-    with open('env_info.txt', 'r', encoding='utf-8-sig') as file:
-        test_environments = json.load(file)
 
-    if vuln_in_container:
-        '''
-        active_containers = list_containers()
-        
-        print('Select container from list: ')
-        for container in active_containers:
-            print(f'- {container}')
-        
-        valid_user_input = False
-        while not valid_user_input:
-            user_input = input()
+    active_containers = list_containers()
+    print('Select container from list: ')
+    for key, value in enumerate(active_containers):
+        print(f'{key} - {value}')
+    
+    valid_user_input = False
+    while not valid_user_input:
+        user_input = input()
+        target = active_containers[int(user_input)]
 
-            if user_input in active_containers:
-                env_info = extract_container_info(user_input)
-                valid_user_input = True
-            else:
-                print('Invalid input. Select container from list')
-        '''
-        try:
-            env_info = test_environments[nvt_oid]['env_info']
-        except KeyError:
-            print(f'Could not find {nvt_oid} NVT OID in env.txt. Ending program.')
-            return
-    else:
-        try:
-            env_info = test_environments['pop-os-24-ambient']['env_info']
-        except KeyError:
-            print(f'Could not find pop-os-24-ambient in env.txt. Ending program.')
-            return
-        '''
-        env_info = extract_environment_info()
-        '''
+        if target:
+            valid_user_input = True
+            env_info = extract_container_info(target)
+            valid_user_input = True
+        else:
+            print('Invalid input. Select container from list')
 
     print('Generating prompt...')
     prompt = generate_prompt(vuln_details, env_info)
@@ -112,7 +97,7 @@ def main():
     
     # Saving results 
     print("Saving results...")
-    save_results(nvt_oid, prompt["CVEs"], LLM_model, LLM_response.content, elapsed_time)
+    save_results(nvt_oid, prompt["CVEs"], LLM_model, LLM_response.content, env_info, elapsed_time)
     
 if __name__ == "__main__":
     main()
